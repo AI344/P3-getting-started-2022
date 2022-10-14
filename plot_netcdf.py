@@ -3,12 +3,14 @@ import netCDF4 as nc
 import pylab as plt
 import numpy as np
 from datetime import datetime
+import xarray as xr
 # %%
 data_to_plot=nc.Dataset('u-be647_ann_mean_surface_level_o3.nc')
 # %%
 data_to_plot.variables['o3']
 
-# %% naive mean without surface area weighting and with saw 
+# %% 
+#fn that generates lat lon surface area grid
 def area_grid(lat,lon):
     '''
     Function to calculate surface area per gridbox
@@ -48,6 +50,8 @@ def area_grid(lat,lon):
         j += 1
     return area
 
+# %%
+# naive mean without surface area weighting and with saw 
 grid_areas = area_grid(data_to_plot.variables['latitude'][:], data_to_plot.variables['longitude'][:])
 tot_surface = np.sum(grid_areas)
 
@@ -75,14 +79,8 @@ plt.show()
 
 # %%
 # rewritten using xarray module
-import xarray as xr
-import cftime
-
 ds=xr.open_dataset('u-be647_ann_mean_surface_level_o3.nc')
-# times = ds.time.values
-# o3_data = ds.o3.values
-# lats = ds.latitude.values
-# longs = ds.longitude.values
+ds = ds.convert_calendar('standard', align_on='year')
 
 grid_areas = area_grid(ds.latitude.values, ds.longitude.values)
 tot_surface = np.sum(grid_areas)
@@ -94,9 +92,13 @@ for timestamp in ds.o3.values[:,:,:,:]:
     adj_o3 = np.multiply(timestamp,grid_areas)
     o3_mean_adj.append(np.sum(adj_o3)*28.8*1e9/(48*tot_surface))
 
-times = ds.time.values
-conv_time = xr.times.convert_calendar('standard')
-
+plt.plot(ds.time.values, o3_mean_list, label='Unweighted')
+plt.plot(ds.time.values, o3_mean_adj, label='Surface weighted')
+plt.legend()
+plt.title('Surface weighted vs unweighted global O3 concs')
+plt.xlabel('Date')
+plt.ylabel('Mean Global O3 Conc (ppb)')
+plt.show()
 
 # %%
 # plot O3 as a colormap
@@ -119,4 +121,3 @@ ax.coastlines()
 #ax.stock_img()
 plt.show()
 #plt.colorbar()
-# %%
