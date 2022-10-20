@@ -121,3 +121,4 @@ ax.coastlines()
 #ax.stock_img()
 plt.show()
 #plt.colorbar()
+# %%
